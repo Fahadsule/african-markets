@@ -27,4 +27,10 @@ def get_daily_price(exchange, symbol, start_date, end_date):
         sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (trade_date>='{start_date}' AND trade_date<='{end_date}')"
     
     df = pd.read_sql_query(sql, engine)
+    
+    # Convert to datetime with format specification, then extract date
+    if 'trade_date' in df.columns:
+        df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
+    
     return df
+
