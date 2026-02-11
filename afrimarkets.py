@@ -1,0 +1,33 @@
+import pandas as pd 
+import psycopg2
+import sqlalchemy
+import numpy as np
+import statsmodels
+
+db_connection_string = "postgresql://fahad:589Aupgradez2BdfK@localhost:5432/africanfinance_db"
+engine = sqlalchemy.create_engine(db_connection_string)
+
+
+Exchange_tables={"NASE": "nse_ke_daily_ohlcv",
+                 "BRVM":"brvm_daily_ohlcv",
+                 "DSE":"dse_tz_daily_ohlcv",
+                 "JSE":"jse_sa_daily_ohlcv"}
+
+
+def get_daily_price(exchange,symbol,start_date,end_date):
+    table=Exchange_tables[exchange]
+    if start_date.lower()=="all" and end_date.lower()=="max":
+        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s'
+    elif start_date=="all":
+        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s AND trade_date<=%(end_date)s'
+    elif end_date=='max':
+        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s  AND trade_date>=%(start_date)s'
+    else:
+        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s AND (trade_date>=%(start_date)s AND trade_date<=%(end_date)s)'
+
+    df=pd.read_sql_query(sql,engine)
+    return df
+
+get_daily_price('NASE','TOTL','all')
+
+    
