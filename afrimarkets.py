@@ -17,17 +17,18 @@ Exchange_tables={"NASE": "nse_ke_daily_ohlcv",
 def get_daily_price(exchange,symbol,start_date,end_date):
     table=Exchange_tables[exchange]
     if start_date.lower()=="all" and end_date.lower()=="max":
-        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s'
-    elif start_date=="all":
-        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s AND trade_date<=%(end_date)s'
-    elif end_date=='max':
-        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s  AND trade_date>=%(start_date)s'
+        sql=f'SELECT * FROM {table} WHERE ticker=%(symbol)s'
+    elif start_date.lower()=="all":
+        sql=f'SELECT * FROM {table} WHERE ticker=%(symbol)s AND trade_date<=%(end_date)s'
+    elif end_date.lower()=='max':
+        sql=f'SELECT * FROM {table} WHERE ticker=%(symbol)s  AND trade_date>=%(start_date)s'
     else:
-        sql='SELECT * FROM {table} WHERE ticker=%(symbol)s AND (trade_date>=%(start_date)s AND trade_date<=%(end_date)s)'
+        sql=f'SELECT * FROM {table} WHERE ticker=%(symbol)s AND (trade_date>=%(start_date)s AND trade_date<=%(end_date)s)'
 
     df=pd.read_sql_query(sql,engine)
     return df
 
-get_daily_price('NASE','TOTL','all')
+get_daily_price('NASE','TOTL','all','max')
+
 
     
