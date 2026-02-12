@@ -22,6 +22,15 @@ Index_symbols={"NASE":"^NASI",
                "BRVM":"BRVMPG",
                "JSE":"^J203.JO"}
 
+distribution_tables={"NASE":"nse_corporate_actions_distributions"}
+
+
+Dividend_table={"NASE":"nse_corporate_actions_dividends"}
+
+Dividend_available=['NASE']
+
+distribution_available=['NASE']
+
 def get_daily_price(exchange, symbol, start_date, end_date):
     table = Exchange_tables[exchange]
     
@@ -44,7 +53,7 @@ def get_daily_price(exchange, symbol, start_date, end_date):
     
     return df
 
-def get_daily_return(exchange, symbol, start_date, end_date,ignore_zero_volume):
+def get_no_dividend_daily_return(exchange, symbol, start_date, end_date,ignore_zero_volume):
     df=get_daily_price(exchange,symbol,start_date,end_date)
     df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
     if ignore_zero_volume==True:
@@ -102,5 +111,48 @@ def get_index_return(exchange,start_date,end_date):
     df=df[['trade_date','ticker','daily_return']]
     return df
 
-test=get_index_return('DSE','all','max')
-print(test)
+def get_dividend_data(exchange,symbol,start_date,end_date):
+    
+    if exchange in Dividend_available:
+        table=Dividend_table[exchange]
+        if start_date.lower() == "all" and end_date.lower() == "max":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+        elif start_date.lower() == "all":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date<='{end_date}'"
+        elif end_date.lower() == 'max':
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date>='{start_date}'"
+        else:
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (pay_date>='{start_date}' AND pay_date<='{end_date}')"
+    
+        df = pd.read_sql_query(sql, engine)
+        df = df.sort_values('pay_date')
+        df = df.reset_index(drop=True)
+    
+        return df
+    else:
+        print("WE CURRENTLY LACK DIVIDEND DATA FOR THIS EXCHANGE,\n\t WE ARE SORRYe🥺")
+        return None
+    
+def get_distribution_data(exchange,symbol,start_date,end_date):
+    if exchange in distribution_available:
+        table=distribution_tables[exchange]
+        if start_date.lower() == "all" and end_date.lower() == "max":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+        elif start_date.lower() == "all":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date<='{end_date}'"
+        elif end_date.lower() == 'max':
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date>='{start_date}'"
+        else:
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (pay_date>='{start_date}' AND pay_date<='{end_date}')"
+    
+        df = pd.read_sql_query(sql, engine)
+        df = df.sort_values('pay_date')
+        df = df.reset_index(drop=True)
+    
+        return df
+    else:
+        print("WE CURRENTLY LACK DISTRIBUTIONS DATA FOR THIS EXCHANGE,\n\t WE ARE SORRYe🥺")
+        return None
+    
+
+    
