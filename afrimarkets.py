@@ -13,6 +13,10 @@ Exchange_tables = {
     "DSE": "dse_tz_daily_ohlcv",
     "JSE": "jse_sa_daily_ohlcv"
 }
+Index_tables={"NASE":"nse_ke_daily_ohlcv",
+              "BRVM":"brvm_indices_daily_ohlcv",,
+              "DSE": "DSEI",
+              "JSE":"jse_indices_daily_ohlcv"}
 
 def get_daily_price(exchange, symbol, start_date, end_date):
     table = Exchange_tables[exchange]
@@ -45,5 +49,25 @@ def get_daily_return(exchange, symbol, start_date, end_date,ignore_zero_volume):
     df=df[['trade_date','ticker','company_name','daily_return']]
     return df
 
-test=get_daily_return(exchange='NASE',symbol='TOTL',start_date='all',end_date='max',ignore_zero_volume=True)
-print(test)
+def get_index_return(exchange, symbol, start_date, end_date):
+    table = Index_tables[exchange]
+    
+    if start_date.lower() == "all" and end_date.lower() == "max":
+        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+    elif start_date.lower() == "all":
+        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND trade_date<='{end_date}'"
+    elif end_date.lower() == 'max':
+        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND trade_date>='{start_date}'"
+    else:
+        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (trade_date>='{start_date}' AND trade_date<='{end_date}')"
+    
+    df = pd.read_sql_query(sql, engine)
+    
+    # Convert to datetime with format specification, then extract date
+    if 'trade_date' in df.columns:
+        df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
+    df = df.sort_values('trade_date')
+    df = df.reset_index(drop=True)
+    
+    return df
+    
