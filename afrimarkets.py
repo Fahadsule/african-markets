@@ -31,6 +31,19 @@ def get_daily_price(exchange, symbol, start_date, end_date):
     # Convert to datetime with format specification, then extract date
     if 'trade_date' in df.columns:
         df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
+    df = df.sort_values('trade_date')
+    df = df.reset_index(drop=True)
     
     return df
 
+def get_daily_return(exchange, symbol, start_date, end_date,ignore_zero_volume):
+    df=get_daily_price(exchange,symbol,start_date,end_date)
+    df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
+    if ignore_zero_volume==True:
+        df=df[df['volume']>0]
+    df['daily_return']=df['closing_price'].pct_change()
+    df=df[['trade_date','ticker','company_name','daily_return']]
+    return df
+
+test=get_daily_return(exchange='NASE',symbol='TOTL',start_date='all',end_date='max',ignore_zero_volume=True)
+print(test)
