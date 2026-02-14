@@ -24,12 +24,14 @@ Index_symbols={"NASE":"^NASI",
 
 distribution_tables={"NASE":"nse_corporate_actions_distributions"}
 
-
 Dividend_table={"NASE":"nse_corporate_actions_dividends"}
 
+bonus_tables={"NASE":"nse_corporate_actions_bonus"}
 Dividend_available=['NASE']
 
 distribution_available=['NASE']
+
+bonus_available=['NASE']
 
 def get_daily_price(exchange, symbol, start_date, end_date):
     table = Exchange_tables[exchange]
@@ -155,5 +157,20 @@ def get_distribution_data(exchange,symbol,start_date,end_date):
         return None
     
 def get_bonus_issue_data(exchange,symbol,start_date,end_date):
-    
+    if exchange in bonus_available:
+        table=bonus_tables[exchange]
+        if start_date.lower() == "all" and end_date.lower() == "max":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+        elif start_date.lower() == "all":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date<='{end_date}'"
+        elif end_date.lower() == 'max':
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date>='{start_date}'"
+        else:
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (pay_date>='{start_date}' AND pay_date<='{end_date}')"
+        df=pd.read_sql_query(sql,engine)
+        df=df.sort_values('credit_date')
+        df=df.reset_index(drop=True)
+        return df
+    else:
+        print("WE CURRENTLY LACK DISTRIBUTION DATA ON THIS EXCHANGE")
     
