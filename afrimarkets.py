@@ -25,6 +25,8 @@ Index_symbols={"NASE":"^NASI",
 
 distribution_tables={"NASE":"nse_corporate_actions_distributions"}
 
+ticker_changes_tables={"NASE":"nse_ticker_change"}
+
 Dividend_table={"NASE":"nse_corporate_actions_dividends",
                 "DSE":"dse_corporate_actions_dividends"}
 
@@ -34,7 +36,11 @@ splits_tables={"NASE":"nse_corporate_actions_splits",
 bonus_tables={"NASE":"nse_corporate_actions_bonus",
               "DSE":"dse_corporate_actions_bonus"}
 
+rights_tables={"NASE":"nse_corporate_actions_rights",
+               "DSE":"dse_corporate_actions_rights"}
+
 index_available=['NASE','DSE','JSE','BRVM']
+
 Dividend_available=['NASE','DSE']
 
 distribution_available=['NASE']
@@ -44,6 +50,10 @@ bonus_available=['NASE','DSE']
 splits_available=['NASE','DSE']
 
 exchanges_available=['NASE','JSE','DSE','BRVM']
+
+rights_available=['NASE','DSE']
+
+ticker_changes=['NASE']
 
 def get_daily_price(exchange, symbol, start_date, end_date):
     if exchange in exchanges_available:
@@ -186,11 +196,11 @@ def get_bonus_issue_data(exchange,symbol,start_date,end_date):
         if start_date.lower() == "all" and end_date.lower() == "max":
             sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
         elif start_date.lower() == "all":
-            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date<='{end_date}'"
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND credit_date<='{end_date}'"
         elif end_date.lower() == 'max':
-            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND pay_date>='{start_date}'"
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND credit_date>='{start_date}'"
         else:
-            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (pay_date>='{start_date}' AND pay_date<='{end_date}')"
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (credit_date>='{start_date}' AND credit_date<='{end_date}')"
         df=pd.read_sql_query(sql,engine)
         df=df.sort_values('credit_date')
         df=df.reset_index(drop=True)
@@ -201,6 +211,47 @@ def get_bonus_issue_data(exchange,symbol,start_date,end_date):
 def get_splits_data(exchange,symbol,start_date,end_date):
     if exchange in splits_available:
         table=splits_tables[exchange]
+        if start_date.lower() == "all" and end_date.lower() == "max":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+        elif start_date.lower() == "all":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND effective_date<='{end_date}'"
+        elif end_date.lower() == 'max':
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND effective_date>='{start_date}'"
+        else:
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (effective_date>='{start_date}' AND effective_date<='{end_date}')"
+        df=pd.read_sql_query(sql,engine)
+        df=df.sort_values('effective_date')
+        df=df.reset_index(drop=True)
+        return df
+    else:
+        print("WE CURRENTLY LACK STOCK SPLITS DATA ON THIS EXCHANGE")
 
 
+def get_rights_data(exchange,symbol,start_date,end_date):
+    if exchange in rights_available:
+        table=rights_tables[exchange]
+        if start_date.lower() == "all" and end_date.lower() == "max":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+        elif start_date.lower() == "all":
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND credit_date<='{end_date}'"
+        elif end_date.lower() == 'max':
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND credit_date>='{start_date}'"
+        else:
+            sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (credit_date>='{start_date}' AND credit_date<='{end_date}')"
+        df=pd.read_sql_query(sql,engine)
+        df=df.sort_values('credit_date')
+        df=df.reset_index(drop=True)
+        return df
+    else:
+        print("WE CURRENTLY LACK RIGHTS DATA ON THIS EXCHANGE..........")
+
+def get_ticker_changes(exchange):
+    if exchange in ticker_changes:
+        table=ticker_changes_tables[exchange]
+        sql=f"SELECT * FROM {table}"
+        df = pd.read_sql_query(sql, engine) 
+        df = df.reset_index(drop=True)
+        return df
+    else:
+        print("NO TICKER CHANGE RECORDED FOR THIS EXCHANGE.................")
 
