@@ -154,5 +154,6 @@ def get_distribution_data(exchange,symbol,start_date,end_date):
         print("WE CURRENTLY LACK DISTRIBUTIONS DATA FOR THIS EXCHANGE,\n\t WE ARE SORRYe🥺")
         return None
     
-
+def get_bonus_issue_data(exchange,symbol,start_date,end_date):
+    
     
