@@ -13,6 +13,7 @@ Exchange_tables = {
     "DSE": "dse_tz_daily_ohlcv",
     "JSE": "jse_sa_daily_ohlcv"
 }
+
 Index_tables={"NASE":"nse_ke_daily_ohlcv",
               "BRVM":"brvm_indices_daily_ohlcv",
               "DSE": '"DSEI"',
@@ -24,68 +25,29 @@ Index_symbols={"NASE":"^NASI",
 
 distribution_tables={"NASE":"nse_corporate_actions_distributions"}
 
-Dividend_table={"NASE":"nse_corporate_actions_dividends"}
+Dividend_table={"NASE":"nse_corporate_actions_dividends",
+                "DSE":"dse_corporate_actions_dividends"}
 
-bonus_tables={"NASE":"nse_corporate_actions_bonus"}
-Dividend_available=['NASE']
+splits_tables={"NASE":"nse_corporate_actions_splits",
+               "DSE":'dse_corporate_actions_splits'}
+
+bonus_tables={"NASE":"nse_corporate_actions_bonus",
+              "DSE":"dse_corporate_actions_bonus"}
+
+index_available=['NASE','DSE','JSE','BRVM']
+Dividend_available=['NASE','DSE']
 
 distribution_available=['NASE']
 
-bonus_available=['NASE']
+bonus_available=['NASE','DSE']
+
+splits_available=['NASE','DSE']
+
+exchanges_available=['NASE','JSE','DSE','BRVM']
 
 def get_daily_price(exchange, symbol, start_date, end_date):
-    table = Exchange_tables[exchange]
-    
-    if start_date.lower() == "all" and end_date.lower() == "max":
-        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
-    elif start_date.lower() == "all":
-        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND trade_date<='{end_date}'"
-    elif end_date.lower() == 'max':
-        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND trade_date>='{start_date}'"
-    else:
-        sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (trade_date>='{start_date}' AND trade_date<='{end_date}')"
-    
-    df = pd.read_sql_query(sql, engine)
-    
-    # Convert to datetime with format specification, then extract date
-    if 'trade_date' in df.columns:
-        df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
-    df = df.sort_values('trade_date')
-    df = df.reset_index(drop=True)
-    
-    return df
-
-def get_no_dividend_daily_return(exchange, symbol, start_date, end_date,ignore_zero_volume):
-    df=get_daily_price(exchange,symbol,start_date,end_date)
-    df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
-    if ignore_zero_volume==True:
-        df=df[df['volume']>0]
-    df['daily_return']=df['closing_price'].pct_change()
-    df=df[['trade_date','ticker','company_name','daily_return']]
-    return df
-
-def get_index_price(exchange,start_date, end_date):
-    table = Index_tables[exchange]
-    if exchange=="DSE":
-        if start_date.lower() == "all" and end_date.lower() == "max":
-            sql = f"SELECT * FROM {table}"
-        elif start_date.lower() == "all":
-            sql = f"SELECT * FROM {table} WHERE trade_date<='{end_date}'"
-        elif end_date.lower() == 'max':
-            sql = f"SELECT * FROM {table} WHERE trade_date>='{start_date}'"
-        else:
-            sql = f"SELECT * FROM {table} WHERE trade_date>='{start_date}' AND trade_date<='{end_date}'"
-        df=pd.read_sql_query(sql, engine)
-        # Convert to datetime with format specification, then extract date
-        if 'trade_date' in df.columns:
-            df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
-        df = df.sort_values('trade_date')
-        df['ticker']='DSEI'
-        df = df.reset_index(drop=True)
-        return df
-    else:
-        symbol=Index_symbols[exchange]
-
+    if exchange in exchanges_available:
+        table = Exchange_tables[exchange]
     
         if start_date.lower() == "all" and end_date.lower() == "max":
             sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
@@ -97,7 +59,6 @@ def get_index_price(exchange,start_date, end_date):
             sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (trade_date>='{start_date}' AND trade_date<='{end_date}')"
     
         df = pd.read_sql_query(sql, engine)
-        
     
         # Convert to datetime with format specification, then extract date
         if 'trade_date' in df.columns:
@@ -106,6 +67,69 @@ def get_index_price(exchange,start_date, end_date):
         df = df.reset_index(drop=True)
     
         return df
+    else:
+        print("WE CURRENTLY LACK DATA ON THAT EXCHANGE....")
+
+def get_no_dividend_daily_return(exchange, symbol, start_date, end_date,ignore_zero_volume):
+    df=get_daily_price(exchange,symbol,start_date,end_date)
+    df['volume'] = pd.to_numeric(df['volume'], errors='coerce')
+    if ignore_zero_volume==True:
+        df=df[df['volume']>0]
+    df['daily_return']=df['closing_price'].pct_change()
+    df=df[['trade_date','ticker','company_name','daily_return']]
+    return df
+
+
+def get_index_price(exchange,start_date, end_date):
+    if exchange in index_available:
+        table = Index_tables[exchange]
+        if exchange=="DSE":
+            if start_date.lower() == "all" and end_date.lower() == "max":
+                sql = f"SELECT * FROM {table}"
+            elif start_date.lower() == "all":
+                sql = f"SELECT * FROM {table} WHERE trade_date<='{end_date}'"
+            elif end_date.lower() == 'max':
+                sql = f"SELECT * FROM {table} WHERE trade_date>='{start_date}'"
+            else:
+                sql = f"SELECT * FROM {table} WHERE trade_date>='{start_date}' AND trade_date<='{end_date}'"
+            df=pd.read_sql_query(sql, engine)
+            # Convert to datetime with format specification, then extract date
+            if 'trade_date' in df.columns:
+                df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
+            df = df.sort_values('trade_date')
+            df['ticker']='DSEI'
+            df = df.reset_index(drop=True)
+            return df
+        else:
+            symbol=Index_symbols[exchange]
+
+    
+            if start_date.lower() == "all" and end_date.lower() == "max":
+                sql = f"SELECT * FROM {table} WHERE ticker='{symbol}'"
+            elif start_date.lower() == "all":
+                sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND trade_date<='{end_date}'"
+            elif end_date.lower() == 'max':
+                sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND trade_date>='{start_date}'"
+            else:
+                sql = f"SELECT * FROM {table} WHERE ticker='{symbol}' AND (trade_date>='{start_date}' AND trade_date<='{end_date}')"
+    
+            df = pd.read_sql_query(sql, engine)
+            if exchange=='JSE':
+                df=df.drop(columns=['volume'])
+            elif exchange=='NASE':
+                df=df.drop(columns=['volume'])
+        
+    
+            # Convert to datetime with format specification, then extract date
+            if 'trade_date' in df.columns:
+                df['trade_date'] = pd.to_datetime(df['trade_date'], format='mixed').dt.date
+            df = df.sort_values('trade_date')
+            df = df.reset_index(drop=True)
+    
+            return df
+    else:
+        print("WE CURRENTLY LACK INDEX DATA FOR THIS EXCHANGE...")
+        return None
     
 def get_index_return(exchange,start_date,end_date):
     df=get_index_price(exchange,start_date,end_date)
@@ -174,3 +198,9 @@ def get_bonus_issue_data(exchange,symbol,start_date,end_date):
     else:
         print("WE CURRENTLY LACK DISTRIBUTION DATA ON THIS EXCHANGE")
     
+def get_splits_data(exchange,symbol,start_date,end_date):
+    if exchange in splits_available:
+        table=splits_tables[exchange]
+
+
+
