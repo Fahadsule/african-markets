@@ -340,6 +340,7 @@ def get_unlevered_beta(exchange,symbol):
         index_df=get_index_return( exchange,start_date='all',end_date='max')
         index_df=index_df[['trade_date','daily_return']]
         df=ticker_df.merge(index_df,on='trade_date',how='inner',suffixes=("_stock","_index"))
+        data_set=len(df)
         X=sm.add_constant(df['daily_return_index'])
         y=df['daily_return_stock']
         model=sm.OLS(y,X).fit()
@@ -348,12 +349,15 @@ def get_unlevered_beta(exchange,symbol):
         r2=model.rsquared
         t_beta=model.tvalues["daily_return_index"]
         p_beta=model.pvalues["daily_return_index"]
+        stock_specific_variance=1-r2
         data={"ticker":symbol,
               "unleverd_beta":beta,
               "alpha":alpha,
               "R2":r2,
+              "idiosyncratic risk":stock_specific_variance,
               "T Value":t_beta,
-              "P Value":p_beta}
+              "P Value":p_beta,
+              "Data set size":data_set}
         beta_df=pd.DataFrame([data])
         return beta_df
     else:
